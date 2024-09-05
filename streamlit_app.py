@@ -1,7 +1,5 @@
 import streamlit as st
 from openai import OpenAI, OpenAIError
-import fitz  # PyMuPDF for reading PDF files
-import io
 
 # Show title and description.
 st.title("📄 Question the PDF")
@@ -12,15 +10,6 @@ st.write(
 
 # Ask user for their OpenAI API key via `st.text_input`.
 openai_api_key = st.text_input("OpenAI API Key", type="password")
-
-# Function to read PDF files using PyMuPDF
-def read_pdf(file):
-    pdf_document = fitz.open(stream=file.read(), filetype="pdf")
-    text = ""
-    for page_num in range(pdf_document.page_count):
-        page = pdf_document.load_page(page_num)
-        text += page.get_text()
-    return text
 
 # Check if the API key has been entered
 if openai_api_key:
@@ -36,32 +25,19 @@ if openai_api_key:
 
         # Let the user upload a file via `st.file_uploader`.
         uploaded_file = st.file_uploader(
-            "Upload a document (.pdf or .txt)", type=("pdf", "txt")
+            "Upload a document (.txt or .md)", type=("txt", "md")
         )
-
-        if uploaded_file:
-            # Handle .txt or .pdf files
-            file_extension = uploaded_file.name.split('.')[-1]
-            
-            if file_extension == 'txt':
-                document = uploaded_file.read().decode()
-            elif file_extension == 'pdf':
-                document = read_pdf(uploaded_file)
-            else:
-                st.error("Unsupported file type.")
-                document = None
-        else:
-            document = None  # Reset if the file is removed
 
         # Ask the user for a question via `st.text_area`.
         question = st.text_area(
             "Now ask a question about the document!",
             placeholder="Can you give me a short summary?",
-            disabled=not document,
+            disabled=not uploaded_file,
         )
 
-        if document and question:
+        if uploaded_file and question:
             # Process the uploaded file and question.
+            document = uploaded_file.read().decode()
             messages = [
                 {
                     "role": "user",
@@ -85,4 +61,3 @@ else:
     st.info("Please add your OpenAI API key to continue.", icon="🗝️")
     # Optionally, you can add placeholders for the file uploader and question input
     st.write("Please enter a valid API key to access the document upload and question features.")
-
